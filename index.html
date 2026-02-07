@@ -132,11 +132,13 @@
       document.addEventListener("DOMContentLoaded", () => {
         let noClickCount = 0;
         let escapeMode = false;
+        let speedMultiplier = 1;
 
         const noBtn = document.getElementById("noBtn");
         const yesBtn = document.getElementById("yesBtn");
         const card = document.getElementById("card");
         const finalMessage = document.getElementById("finalMessage");
+        const question = document.getElementById("question");
 
         const noTexts = [
           "No 🙄",
@@ -144,12 +146,23 @@
           "Think again 🤔",
           "Really sure? 😶",
           "Stop chasing me 😳",
-          "Okay this is scary 😭",
+          "You have lost your No privileges 😈",
         ];
 
-        function moveNoButton() {
-          if (!noBtn) return;
+        function shakeScreen() {
+          card.animate(
+            [
+              { transform: "translateX(0)" },
+              { transform: "translateX(-10px)" },
+              { transform: "translateX(10px)" },
+              { transform: "translateX(-10px)" },
+              { transform: "translateX(0)" },
+            ],
+            { duration: 400 },
+          );
+        }
 
+        function moveNoButton() {
           const btnWidth = noBtn.offsetWidth;
           const btnHeight = noBtn.offsetHeight;
 
@@ -162,6 +175,7 @@
           noBtn.style.position = "fixed";
           noBtn.style.left = `${x}px`;
           noBtn.style.top = `${y}px`;
+          noBtn.style.transition = `left ${0.15 / speedMultiplier}s ease, top ${0.15 / speedMultiplier}s ease`;
         }
 
         noBtn.addEventListener("click", () => {
@@ -173,6 +187,10 @@
 
           if (noClickCount === 5) {
             escapeMode = true;
+            speedMultiplier = 1.5;
+            document.body.style.cursor = "not-allowed";
+            question.textContent = "You have lost your No privileges.";
+            shakeScreen();
           }
         });
 
@@ -180,14 +198,13 @@
           if (!escapeMode) return;
 
           const rect = noBtn.getBoundingClientRect();
-          if (!rect) return;
-
           const distance = Math.hypot(
             rect.x + rect.width / 2 - e.clientX,
             rect.y + rect.height / 2 - e.clientY,
           );
 
-          if (distance < 120) {
+          if (distance < 140) {
+            speedMultiplier += 0.15;
             moveNoButton();
           }
         });
@@ -197,11 +214,12 @@
           noBtn.style.display = "none";
           finalMessage.style.display = "block";
           document.body.style.background = "#ff4d6d";
+          document.body.style.cursor = "default";
 
           if (window.confetti) {
             confetti({
-              particleCount: 250,
-              spread: 100,
+              particleCount: 300,
+              spread: 120,
               origin: { y: 0.6 },
             });
           }

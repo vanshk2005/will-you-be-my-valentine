@@ -38,10 +38,8 @@
 
       h1 {
         font-size: 2.2rem;
-        margin-bottom: 2.5rem;
+        margin-bottom: 1.5rem;
         color: #333;
-        position: relative;
-        z-index: 10;
       }
 
       .buttons {
@@ -49,8 +47,6 @@
         gap: 1.5rem;
         justify-content: center;
         align-items: center;
-        position: relative;
-        z-index: 10;
       }
 
       button {
@@ -59,170 +55,181 @@
         font-size: 1.1rem;
         border-radius: 999px;
         cursor: pointer;
-        transition:
-          transform 0.35s ease,
-          width 0.35s ease,
-          height 0.35s ease;
         font-weight: 600;
         white-space: nowrap;
+        transition: all 0.25s ease;
       }
 
       #yesBtn {
         background: #ff4d6d;
         color: white;
-        position: relative;
-        z-index: 1;
+        z-index: 2;
       }
 
       #noBtn {
         background: #f1f1f1;
         color: #333;
-        position: relative;
         z-index: 2;
+      }
+
+      .love-message {
+        display: none;
+        text-align: center;
+      }
+
+      .love-message video {
+        width: 90vw;
+        max-width: 420px;
+        border-radius: 20px;
+        display: block;
+        margin: 0 auto 1rem;
       }
 
       #yesBtn.fullscreen {
         position: fixed;
-        top: 0;
-        left: 0;
+        inset: 0;
         width: 100vw;
         height: 100vh;
         border-radius: 0;
         font-size: 3rem;
-        z-index: 999;
-      }
-
-      .love-message {
-        font-size: 3rem;
-        color: white;
-        display: none;
-        animation: pop 0.6s ease;
-      }
-
-      @keyframes pop {
-        0% {
-          transform: scale(0.6);
-          opacity: 0;
-        }
-        100% {
-          transform: scale(1);
-          opacity: 1;
-        }
       }
     </style>
   </head>
   <body>
     <div class="container" id="card">
       <img
+        id="cat"
         src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRpZnA0OHNiM3IzejBkbnR6b2kyYW52Z3NwOXF6bDg4bzhpbXluaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/y93x7gLXTO5dnSWCEI/giphy.gif"
-        alt="cute cat"
         style="width: 120px; margin-bottom: 1rem"
       />
+
+      <div
+        id="timer"
+        style="
+          font-size: 1rem;
+          color: #ff4d6d;
+          display: none;
+          margin-bottom: 0.4rem;
+        "
+      >
+        Time is running out… <span id="countdown">10</span>s
+      </div>
+
+      <div
+        id="whisper"
+        style="
+          font-size: 0.9rem;
+          color: #999;
+          opacity: 0;
+          transition: opacity 1s ease;
+        "
+      >
+        there’s no escape…
+      </div>
+
       <h1 id="question">Will you be my Valentine? 💖</h1>
+
       <div class="buttons">
         <button id="yesBtn">Yes 💕</button>
         <button id="noBtn">No 🙄</button>
       </div>
     </div>
 
-    <div class="love-message" id="finalMessage">Yayyy! 💘💘💘</div>
+    <div class="love-message" id="finalMessage">
+      <video id="coupleVideo" playsinline>
+        <source src="public/couple.mp4" type="video/mp4" />
+      </video>
+      <h1>I love you ❤️</h1>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        let noClickCount = 0;
+        let noClicks = 0;
         let escapeMode = false;
-        let speedMultiplier = 1;
-
-        const noBtn = document.getElementById("noBtn");
-        const yesBtn = document.getElementById("yesBtn");
-        const card = document.getElementById("card");
-        const finalMessage = document.getElementById("finalMessage");
-        const question = document.getElementById("question");
+        let growInterval = null;
 
         const noTexts = [
           "No 🙄",
           "Are you sure? 😐",
           "Think again 🤔",
           "Really sure? 😶",
-          "Stop chasing me 😳",
-          "You have lost your No privileges 😈",
+          "Still no? 😳",
+          "Okay this is awkward 😬",
+          "You’re running out of time…",
+          "Just say yes 😭",
         ];
 
-        function shakeScreen() {
-          card.animate(
-            [
-              { transform: "translateX(0)" },
-              { transform: "translateX(-10px)" },
-              { transform: "translateX(10px)" },
-              { transform: "translateX(-10px)" },
-              { transform: "translateX(0)" },
-            ],
-            { duration: 400 },
-          );
-        }
+        const noBtn = document.getElementById("noBtn");
+        const yesBtn = document.getElementById("yesBtn");
+        const card = document.getElementById("card");
+        const finalMessage = document.getElementById("finalMessage");
+        const countdownEl = document.getElementById("countdown");
+        const timer = document.getElementById("timer");
+        const whisper = document.getElementById("whisper");
+        const video = document.getElementById("coupleVideo");
 
-        function moveNoButton() {
-          const btnWidth = noBtn.offsetWidth;
-          const btnHeight = noBtn.offsetHeight;
-
-          const maxX = Math.max(0, window.innerWidth - btnWidth - 20);
-          const maxY = Math.max(0, window.innerHeight - btnHeight - 20);
-
-          const x = Math.random() * maxX;
-          const y = Math.random() * maxY;
-
+        function moveNoRandom() {
+          const maxX = window.innerWidth - noBtn.offsetWidth - 20;
+          const maxY = window.innerHeight - noBtn.offsetHeight - 20;
           noBtn.style.position = "fixed";
-          noBtn.style.left = `${x}px`;
-          noBtn.style.top = `${y}px`;
-          noBtn.style.transition = `left ${0.15 / speedMultiplier}s ease, top ${0.15 / speedMultiplier}s ease`;
+          noBtn.style.left = `${Math.random() * maxX}px`;
+          noBtn.style.top = `${Math.random() * maxY}px`;
         }
 
         noBtn.addEventListener("click", () => {
-          noClickCount++;
+          noClicks++;
+          noBtn.textContent = noTexts[Math.min(noClicks, noTexts.length - 1)];
 
-          if (noClickCount <= 5) {
-            noBtn.textContent = noTexts[noClickCount - 1];
-          }
-
-          if (noClickCount === 5) {
+          if (noClicks === 6) {
             escapeMode = true;
-            speedMultiplier = 1.5;
-            document.body.style.cursor = "not-allowed";
-            question.textContent = "You have lost your No privileges.";
-            shakeScreen();
+            timer.style.display = "block";
+            whisper.style.opacity = 1;
+
+            let time = 10;
+            const interval = setInterval(() => {
+              time--;
+              countdownEl.textContent = time;
+
+              if (time <= 0) {
+                clearInterval(interval);
+
+                // remove NO button
+                noBtn.remove();
+
+                // start growing YES button
+                let scale = 1;
+                growInterval = setInterval(() => {
+                  scale += 0.35;
+                  yesBtn.style.transform = `scale(${scale})`;
+
+                  if (scale >= 8) {
+                    clearInterval(growInterval);
+                    yesBtn.classList.add("fullscreen");
+                  }
+                }, 250);
+              }
+            }, 1000);
           }
         });
 
         document.addEventListener("mousemove", (e) => {
           if (!escapeMode) return;
+          const rect = noBtn?.getBoundingClientRect();
+          if (!rect) return;
 
-          const rect = noBtn.getBoundingClientRect();
-          const distance = Math.hypot(
+          const dist = Math.hypot(
             rect.x + rect.width / 2 - e.clientX,
             rect.y + rect.height / 2 - e.clientY,
           );
 
-          if (distance < 140) {
-            speedMultiplier += 0.15;
-            moveNoButton();
-          }
+          if (dist < 140) moveNoRandom();
         });
 
         yesBtn.addEventListener("click", () => {
           card.style.display = "none";
-          noBtn.style.display = "none";
           finalMessage.style.display = "block";
-          document.body.style.background = "#ff4d6d";
-          document.body.style.cursor = "default";
-
-          if (window.confetti) {
-            confetti({
-              particleCount: 300,
-              spread: 120,
-              origin: { y: 0.6 },
-            });
-          }
+          video.play();
+          video.onended = () => video.pause();
         });
       });
     </script>

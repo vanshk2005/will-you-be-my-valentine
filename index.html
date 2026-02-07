@@ -57,7 +57,7 @@
         cursor: pointer;
         font-weight: 600;
         white-space: nowrap;
-        transition: all 0.25s ease;
+        transition: transform 0.25s ease;
       }
 
       #yesBtn {
@@ -72,19 +72,6 @@
         z-index: 2;
       }
 
-      .love-message {
-        display: none;
-        text-align: center;
-      }
-
-      .love-message video {
-        width: 90vw;
-        max-width: 420px;
-        border-radius: 20px;
-        display: block;
-        margin: 0 auto 1rem;
-      }
-
       #yesBtn.fullscreen {
         position: fixed;
         inset: 0;
@@ -93,13 +80,26 @@
         border-radius: 0;
         font-size: 3rem;
       }
+
+      .love-message {
+        display: none;
+        text-align: center;
+      }
+
+      .love-message video {
+        width: 80vw;
+        max-width: 320px;
+        border-radius: 20px;
+        display: block;
+        margin: 0 auto 1rem;
+      }
     </style>
   </head>
   <body>
     <div class="container" id="card">
       <img
         id="cat"
-        src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRpZnA0OHNiM3IzejBkbnR6b2kyYW52Z3NwOXF6bDg4bzhpbXluaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/y93x7gLXTO5dnSWCEI/giphy.gif"
+        src="https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif"
         style="width: 120px; margin-bottom: 1rem"
       />
 
@@ -140,6 +140,22 @@
         <source src="public/couple.mp4" type="video/mp4" />
       </video>
       <h1>I love you ❤️</h1>
+      <button
+        id="replayBtn"
+        style="
+          display: none;
+          margin-top: 1rem;
+          padding: 0.7rem 1.8rem;
+          border-radius: 999px;
+          border: none;
+          background: #ff4d6d;
+          color: white;
+          font-size: 1rem;
+          cursor: pointer;
+        "
+      >
+        Replay ▶️
+      </button>
     </div>
 
     <script>
@@ -167,6 +183,7 @@
         const timer = document.getElementById("timer");
         const whisper = document.getElementById("whisper");
         const video = document.getElementById("coupleVideo");
+        const replayBtn = document.getElementById("replayBtn");
 
         function moveNoRandom() {
           const maxX = window.innerWidth - noBtn.offsetWidth - 20;
@@ -200,9 +217,15 @@
                 let scale = 1;
                 growInterval = setInterval(() => {
                   scale += 0.35;
+
+                  if (navigator.vibrate) {
+                    navigator.vibrate([40, 60, 40]);
+                  }
+
                   yesBtn.style.transform = `scale(${scale})`;
 
                   if (scale >= 8) {
+                    if (navigator.vibrate) navigator.vibrate(0);
                     clearInterval(growInterval);
                     yesBtn.classList.add("fullscreen");
                   }
@@ -228,8 +251,21 @@
         yesBtn.addEventListener("click", () => {
           card.style.display = "none";
           finalMessage.style.display = "block";
+
+          video.muted = false;
+          video.currentTime = 0;
           video.play();
-          video.onended = () => video.pause();
+
+          video.onended = () => {
+            video.pause();
+            replayBtn.style.display = "inline-block";
+          };
+        });
+
+        replayBtn.addEventListener("click", () => {
+          replayBtn.style.display = "none";
+          video.currentTime = 0;
+          video.play();
         });
       });
     </script>
